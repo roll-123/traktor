@@ -1,7 +1,10 @@
 # Configuration file
 
 C=ccache gcc
-C_FLAGS_COMMON=-fno-common -march=core2 -D _UNICODE -D UNICODE -D __LINUX__ -fPIC -fvisibility=hidden
+# gcc 14+ promoted incompatible-pointer-types to an error by default;
+# the 2018 lwObject 3rdp loader has dozens of K&R-style violations.
+# Demote to a warning so the build can proceed (stopgap).
+C_FLAGS_COMMON=-fno-common -march=core2 -D _UNICODE -D UNICODE -D __LINUX__ -fPIC -fvisibility=hidden -Wno-error=incompatible-pointer-types
 C_FLAGS_DEBUG_SHARED=$(C_FLAGS_COMMON) -g
 C_FLAGS_RELEASE_SHARED=$(C_FLAGS_COMMON) -O3 -g
 C_FLAGS_DEBUG_STATIC=$(C_FLAGS_COMMON) -g
