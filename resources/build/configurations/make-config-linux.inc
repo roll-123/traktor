@@ -11,7 +11,15 @@ C_FLAGS_RELEASE_EXECUTABLE=$(C_FLAGS_COMMON) -O3 -g
 C_FLAG_OUTPUT=-o 
 
 CC=ccache gcc
-CC_FLAGS_COMMON=-fno-common -std=c++11 -march=core2 -D _UNICODE -D UNICODE -D __LINUX__ -fPIC -fvisibility=hidden
+# NOTE: -include <hdr> forces every translation unit to include the listed
+# stdlib headers. This is a stopgap for porting the 2018 codebase to modern
+# compilers (gcc 11+/clang 14+) which dropped many transitive includes.
+# 785 headers in this tree use std::string without explicitly #including
+# <string>, with similar gaps for vector/map/etc. Proper fix is to add
+# explicit includes to each header; this flag unblocks the build in the
+# meantime.
+CC_FORCED_INCLUDES=-include cstddef -include cstdint -include string -include vector -include map -include set -include list -include memory -include functional -include utility -include algorithm
+CC_FLAGS_COMMON=-fno-common -std=c++11 -march=core2 -D _UNICODE -D UNICODE -D __LINUX__ -fPIC -fvisibility=hidden $(CC_FORCED_INCLUDES)
 CC_FLAGS_DEBUG_SHARED=$(CC_FLAGS_COMMON) -g
 CC_FLAGS_RELEASE_SHARED=$(CC_FLAGS_COMMON) -O3 -g
 CC_FLAGS_DEBUG_STATIC=$(CC_FLAGS_COMMON) -g
