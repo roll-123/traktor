@@ -1,0 +1,46 @@
+# Third-party dependencies (vendored locally, 12 GB).
+# For Gear Up port, restore from dea.7z under dea/projects/gearup/traktor/3rdp/.
+# Eventually: replace with newer setup compatible with upstream traktor's
+# scripts/misc/update-3rdp.run flow.
+/3rdp/
+
+# Build outputs from SolutionBuilder.
+/build/
+
+# Per-platform compiled outputs.
+/bin/latest/
+/bin/win64/Debug/
+/bin/win64/Release/
+/bin/win64/DebugShared/
+/bin/win64/ReleaseShared/
+/bin/win32/Debug/
+/bin/win32/Release/
+/bin/linux/Debug/
+/bin/linux/Release/
+/bin/linux/DebugShared/
+/bin/linux/ReleaseShared/
+/bin/osx/Debug/
+/bin/osx/Release/
+
+# Windows redistributables (downloadable from MS on demand).
+/msvcrt/
+
+# DEA private samples - not needed for the Gear Up build.
+# (Remove this line if you want to commit samples/.)
+/samples/
+
+# Editor user state.
+*.user
+*.suo
+*.vcxproj.user
+.vs/
+.vscode/
+
+# OS cruft.
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Claude harness local state.
+/.claude/
