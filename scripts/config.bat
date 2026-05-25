@@ -15,7 +15,7 @@ set GLSL_OPTIMIZER=%TRAKTOR_HOME%\3rdp\glsl-optimizer-master-20160321
 set SQLITE_SDK=%TRAKTOR_HOME%\3rdp\sqlite-3.8.7.2
 set WXWIDGETS_SDK=%TRAKTOR_HOME%\3rdp\wxWidgets-3.0.2
 set SIMPLYGON_SDK=%TRAKTOR_HOME%\3rdp\SimplygonSDK
-set LUA_SDK=%TRAKTOR_HOME%\3rdp\lua-5.3.2
+set LUA_SDK=%TRAKTOR_HOME%\3rdp\lua-5.3.5
 set GLEW_SDK=%TRAKTOR_HOME%\3rdp\glew-1.13.0
 set TOBII_SDK=%TRAKTOR_HOME%\3rdp\tobii-sdk-1.7.480
 set OPENVR_SDK=%TRAKTOR_HOME%\3rdp\openvr-master-20160822
@@ -24,6 +24,7 @@ set ZLIB_SDK=%TRAKTOR_HOME%\3rdp\zlib-1.2.11
 set SCE_PS3_ROOT=%TRAKTOR_HOME%\3rdp\ps3\usr\local\cell
 set SN_COMMON_PATH=%TRAKTOR_HOME%\3rdp\ps3\SN Systems\Common
 set SN_PS3_PATH=%TRAKTOR_HOME%\3rdp\ps3\SN Systems\Ps3
+set BUGSPLAT_SDK=%TRAKTOR_HOME%\3rdp\BugSplat
 
 :: Export name of solution builder binary.
 set SOLUTIONBUILDER=%TRAKTOR_HOME%\bin\win64\releasestatic\Traktor.SolutionBuilder.App

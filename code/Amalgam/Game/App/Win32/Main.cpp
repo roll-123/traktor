@@ -5,8 +5,8 @@ Copyright 2017 Doctor Entertainment AB. All Rights Reserved.
 ================================================================================================
 */
 #include <intrin.h>
+#include <BugSplat.h>
 #include "Amalgam/Game/App/Win32/ErrorDialog.h"
-#include "Amalgam/Game/App/Win32/StackWalker.h"
 #include "Amalgam/Game/Impl/Application.h"
 #include "Core/Date/DateTime.h"
 #include "Core/Io/FileOutputStreamBuffer.h"
@@ -42,20 +42,8 @@ extern "C"
 namespace
 {
 
-class StackWalkerToConsole : public StackWalker
-{
-protected:
-	// Overload to get less output by stackwalker.
-	virtual void OnSymInit(LPCSTR szSearchPath, DWORD symOptions, LPCSTR szUserName) T_OVERRIDE T_FINAL {}	
-	virtual void OnDbgHelpErr(LPCSTR szFuncName, DWORD gle, DWORD64 addr) T_OVERRIDE T_FINAL {}
-	virtual void OnLoadModule(LPCSTR img, LPCSTR mod, DWORD64 baseAddr, DWORD size, DWORD result, LPCSTR symType, LPCSTR pdbName, ULONGLONG fileVersion) T_OVERRIDE T_FINAL {}
-
-	virtual void OnOutput(LPCSTR szText) T_OVERRIDE T_FINAL
-	{
-		log::info << mbstows(szText);
-	}
-};
-
+/*! \brief
+ */
 class LogTailTarget : public ILogTarget
 {
 public:
@@ -71,6 +59,8 @@ public:
 	}
 };
 
+/*! \brief
+ */
 class LogStreamTarget : public ILogTarget
 {
 public:
@@ -88,6 +78,8 @@ private:
 	Ref< OutputStream > m_stream;
 };
 
+/*! \brief
+ */
 class LogDualTarget : public ILogTarget
 {
 public:
@@ -108,6 +100,12 @@ private:
 	Ref< ILogTarget > m_target2;
 };
 
+Ref< LogTailTarget > g_logTail;
+MiniDmpSender* g_sender = nullptr;
+Path g_logFilePath;
+
+/*! \brief
+ */
 Ref< PropertyGroup > loadSettings(const Path& settingsFile)
 {
 	Ref< PropertyGroup > settings;
@@ -122,6 +120,8 @@ Ref< PropertyGroup > loadSettings(const Path& settingsFile)
 	return settings;
 }
 
+/*! \brief
+ */
 bool saveSettings(const PropertyGroup* settings, const Path& settingsFile)
 {
 	T_ASSERT (settings);
@@ -136,13 +136,19 @@ bool saveSettings(const PropertyGroup* settings, const Path& settingsFile)
 	return result;
 }
 
-void showErrorDialog(const std::list< std::wstring >& tail)
+/*! \brief
+ */
+void showErrorDialog()
 {
 	amalgam::ErrorDialog errorDialog;
 	if (errorDialog.create())
 	{
-		for (std::list< std::wstring >::const_iterator i = tail.begin(); i != tail.end(); ++i)
-			errorDialog.addErrorString(*i);
+		if (g_logTail)
+		{
+			const auto& tail = g_logTail->m_tail;
+			for (const auto& s : tail)
+				errorDialog.addErrorString(s);
+		}
 			
 		errorDialog.addErrorString(L"Please copy this information and contact");
 		errorDialog.addErrorString(L"support@doctorentertainment.com");
@@ -152,6 +158,8 @@ void showErrorDialog(const std::list< std::wstring >& tail)
 	}
 }
 
+/*! \brief
+ */
 bool checkPreconditions()
 {
 	BOOL sseSupported = ::IsProcessorFeaturePresent(PF_XMMI_INSTRUCTIONS_AVAILABLE);
@@ -163,6 +171,8 @@ bool checkPreconditions()
 	return true;
 }
 
+/*! \brief
+ */
 bool isWindows64bit(bool& out64bit)
 {
 	out64bit = false;
@@ -192,8 +202,16 @@ bool isWindows64bit(bool& out64bit)
 #endif
 }
 
+/*! \brief
+ */
 void logSystemInfo()
 {
+	// Log compiler.
+	log::info << L"Compiler" << Endl;
+	log::info << L"\t__DATE__ " << mbstows(__DATE__) << Endl;
+	log::info << L"\t_MSC_VER " << _MSC_VER << Endl;
+	log::info << L"\t_MSC_FULL_VER " << _MSC_FULL_VER << Endl;
+
 	// Log CPU info
 	char CPUString[0x20];
 	int cpuInfo[4] = {-1};
@@ -296,117 +314,84 @@ void logSystemInfo()
 	log::info << L"\tSP version " << uint32_t(osvi.wServicePackMajor) << L"." << uint32_t(osvi.wServicePackMinor) << Endl;
 }
 
-std::wstring getExceptionString(DWORD exceptionCode)
+void logDriverVersion()
 {
-	switch (exceptionCode)
+	typedef enum nvmlReturn_enum 
 	{
-		case EXCEPTION_ACCESS_VIOLATION:		return L"EXCEPTION_ACCESS_VIOLATION";
-		case EXCEPTION_DATATYPE_MISALIGNMENT:	return L"EXCEPTION_DATATYPE_MISALIGNMENT";
-		case EXCEPTION_BREAKPOINT:				return L"EXCEPTION_BREAKPOINT";
-		case EXCEPTION_SINGLE_STEP:				return L"EXCEPTION_SINGLE_STEP";
-		case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:	return L"EXCEPTION_ARRAY_BOUNDS_EXCEEDED";
-		case EXCEPTION_FLT_DENORMAL_OPERAND:	return L"EXCEPTION_FLT_DENORMAL_OPERAND";
-		case EXCEPTION_FLT_DIVIDE_BY_ZERO:		return L"EXCEPTION_FLT_DIVIDE_BY_ZERO";
-		case EXCEPTION_FLT_INEXACT_RESULT:		return L"EXCEPTION_FLT_INEXACT_RESULT";
-		case EXCEPTION_FLT_INVALID_OPERATION:	return L"EXCEPTION_FLT_INVALID_OPERATION";
-		case EXCEPTION_FLT_OVERFLOW:			return L"EXCEPTION_FLT_OVERFLOW";
-		case EXCEPTION_FLT_STACK_CHECK:			return L"EXCEPTION_FLT_STACK_CHECK";
-		case EXCEPTION_FLT_UNDERFLOW:			return L"EXCEPTION_FLT_UNDERFLOW";
-		case EXCEPTION_INT_DIVIDE_BY_ZERO:		return L"EXCEPTION_INT_DIVIDE_BY_ZERO";
-		case EXCEPTION_INT_OVERFLOW:			return L"EXCEPTION_INT_OVERFLOW";
-		case EXCEPTION_PRIV_INSTRUCTION:		return L"EXCEPTION_PRIV_INSTRUCTION";
-		case EXCEPTION_IN_PAGE_ERROR:			return L"EXCEPTION_IN_PAGE_ERROR";
-		case EXCEPTION_ILLEGAL_INSTRUCTION:		return L"EXCEPTION_ILLEGAL_INSTRUCTION";
-		case EXCEPTION_NONCONTINUABLE_EXCEPTION:return L"EXCEPTION_NONCONTINUABLE_EXCEPTION";
-		case EXCEPTION_STACK_OVERFLOW:			return L"EXCEPTION_STACK_OVERFLOW";
-		case EXCEPTION_INVALID_DISPOSITION:		return L"EXCEPTION_INVALID_DISPOSITION";
-		case EXCEPTION_GUARD_PAGE:				return L"EXCEPTION_GUARD_PAGE";
-		default:								return L"UNKNOWN EXCEPTION";					
-	}
+		NVML_SUCCESS = 0,                   //!< The operation was successful
+		NVML_ERROR_UNINITIALIZED = 1,       //!< NVML was not first initialized with nvmlInit()
+		NVML_ERROR_INVALID_ARGUMENT = 2,    //!< A supplied argument is invalid
+		NVML_ERROR_NOT_SUPPORTED = 3,       //!< The requested operation is not available on target device
+		NVML_ERROR_NO_PERMISSION = 4,       //!< The current user does not have permission for operation
+		NVML_ERROR_ALREADY_INITIALIZED = 5, //!< Deprecated: Multiple initializations are now allowed through ref counting
+		NVML_ERROR_NOT_FOUND = 6,           //!< A query to find an object was unsuccessful
+		NVML_ERROR_INSUFFICIENT_SIZE = 7,   //!< An input argument is not large enough
+		NVML_ERROR_INSUFFICIENT_POWER = 8,  //!< A device's external power cables are not properly attached
+		NVML_ERROR_DRIVER_NOT_LOADED = 9,   //!< NVIDIA driver is not loaded
+		NVML_ERROR_TIMEOUT = 10,            //!< User provided timeout passed
+		NVML_ERROR_IRQ_ISSUE = 11,          //!< NVIDIA Kernel detected an interrupt issue with a GPU
+		NVML_ERROR_LIBRARY_NOT_FOUND = 12,  //!< NVML Shared Library couldn't be found or loaded
+		NVML_ERROR_FUNCTION_NOT_FOUND = 13, //!< Local version of NVML doesn't implement this function
+		NVML_ERROR_CORRUPTED_INFOROM = 14,  //!< infoROM is corrupted
+		NVML_ERROR_GPU_IS_LOST = 15,        //!< The GPU has fallen off the bus or has otherwise become inaccessible
+		NVML_ERROR_RESET_REQUIRED = 16,     //!< The GPU requires a reset before it can be used again
+		NVML_ERROR_UNKNOWN = 999            //!< An internal driver error occurred
+	} nvmlReturn_t;
+
+	typedef nvmlReturn_t (*PFNNVMLINIT)();
+	typedef nvmlReturn_t (*PFNNVMLSHUTDOWN)();
+	typedef nvmlReturn_t (*PFNNVMLSYSTEMGETDRIVERVERSION)(char *, unsigned);
+
+	std::wstring fn;
+	if (!OS::getInstance().getEnvironment(L"ProgramW6432", fn))
+		return;
+
+    fn += L"\\Nvidia Corporation\\nvsmi\\nvml.dll";
+ 
+	HMODULE hNVML = LoadLibrary(fn.c_str());
+	if (hNVML == NULL || hNVML == INVALID_HANDLE_VALUE)
+		return;
+
+	PFNNVMLINIT nvmlInit = (PFNNVMLINIT)GetProcAddress(hNVML, "nvmlInit");
+	PFNNVMLSHUTDOWN nvmlShutdown = (PFNNVMLSHUTDOWN)GetProcAddress(hNVML, "nvmlShutdown");
+	PFNNVMLSYSTEMGETDRIVERVERSION nvmlGetDriverVersion = (PFNNVMLSYSTEMGETDRIVERVERSION)GetProcAddress(hNVML, "nvmlSystemGetDriverVersion");
+	if (nvmlInit == nullptr || nvmlShutdown == nullptr || nvmlGetDriverVersion == nullptr)
+		return;
+
+	if (NVML_SUCCESS != nvmlInit())
+		return;
+
+	char buffer[81] = { 0 };
+    nvmlGetDriverVersion(buffer, sizeof(buffer));
+
+	log::info << L"Graphics Driver" << Endl;
+	log::info << L"\tNVidia " << mbstows(buffer) << Endl;
+
+	nvmlShutdown();
 }
 
-void* g_exceptionAddress = 0;
-DWORD g_exceptionCode = 0;
-
-LONG WINAPI exceptionVectoredHandler(struct _EXCEPTION_POINTERS* ep)
+bool miniDmpExceptionCallback(UINT nCode, LPVOID lpVal1, LPVOID lpVal2)
 {
-	g_exceptionAddress = (void*)ep->ExceptionRecord->ExceptionAddress;
-	g_exceptionCode = ep->ExceptionRecord->ExceptionCode;
-
-	bool outputCallStack = false;
-	bool outputInfo = false;
-	switch (ep->ExceptionRecord->ExceptionCode)
+	if (nCode == MDSCB_EXCEPTIONCODE)
 	{
-	case EXCEPTION_ACCESS_VIOLATION:		
-	case EXCEPTION_DATATYPE_MISALIGNMENT:	
-	case EXCEPTION_STACK_OVERFLOW:			
-	case EXCEPTION_ILLEGAL_INSTRUCTION:		
-	case EXCEPTION_PRIV_INSTRUCTION:		
-	case EXCEPTION_IN_PAGE_ERROR:			
-	case EXCEPTION_NONCONTINUABLE_EXCEPTION:
-	case EXCEPTION_INVALID_DISPOSITION:		
-	case EXCEPTION_GUARD_PAGE:				
-//	case EXCEPTION_POSSIBLE_DEADLOCK:
-	case EXCEPTION_INVALID_HANDLE:
-		outputCallStack = true;
-		break;
-
-	case EXCEPTION_BREAKPOINT:				
-	case EXCEPTION_SINGLE_STEP:				
-	case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:	
-	case EXCEPTION_FLT_DENORMAL_OPERAND:	
-	case EXCEPTION_FLT_DIVIDE_BY_ZERO:		
-	case EXCEPTION_FLT_INEXACT_RESULT:		
-	case EXCEPTION_FLT_INVALID_OPERATION:	
-	case EXCEPTION_FLT_OVERFLOW:			
-	case EXCEPTION_FLT_STACK_CHECK:			
-	case EXCEPTION_FLT_UNDERFLOW:			
-	case EXCEPTION_INT_DIVIDE_BY_ZERO:		
-	case EXCEPTION_INT_OVERFLOW:			
-		outputInfo = true;
-		break;
-
-	default:								
-		break;
+		std::wstring fn = g_logFilePath.getPathName();
+		if (!fn.empty())
+			g_sender->sendAdditionalFile(fn.c_str());
 	}
-
-	if (outputCallStack)
-	{
-		log::info << L"Thread " << (uint32_t)GetCurrentThread() << L":" << Endl;
-		log::info << IncreaseIndent;
-
-		StackWalkerToConsole sw;
-		sw.ShowCallstack(GetCurrentThread(), ep->ContextRecord);
-
-		log::info << DecreaseIndent;
-	}
-	else if (outputInfo)
-	{
-		HMODULE hCrashModule;
-		if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, reinterpret_cast<LPCTSTR>(g_exceptionAddress), &hCrashModule))
-		{
-			TCHAR fileName[MAX_PATH];
-			GetModuleFileName(hCrashModule, fileName, sizeof_array(fileName));
-			log::debug << L"Exception ( " << getExceptionString(g_exceptionCode) << L") occurred at 0x" << (uint64_t)g_exceptionAddress << L" in module " << (uint64_t)hCrashModule << L" " << fileName << Endl;
-		}
-	}
-
-	return EXCEPTION_CONTINUE_SEARCH;
-}
-
-void pureVirtualCallHandler(void)
-{
-	CONTEXT c;
-	GET_CURRENT_CONTEXT(c, CONTEXT_FULL);
-	StackWalkerToConsole sw;
-	sw.ShowCallstack(GetCurrentThread(), &c);
-	exit(0);
+	return false;
 }
 
 }
 
+/*! \brief
+ */
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR szCmdLine, int)
 {
+	// BugSplat crash reporting.
+    g_sender = new MiniDmpSender(L"doctorentertainment_01", L"gearup", L"1.0.1", NULL, MDSF_LOGFILE);
+	g_sender->setCallback(miniDmpExceptionCallback); 
+
+	// Our code begin here.
 	std::vector< std::wstring > argv;
 	SystemApplication sysapp;
 
@@ -474,19 +459,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR szCmdLine, int)
 			log::warning.setGlobalTarget(logTarget);
 			log::error  .setGlobalTarget(logTarget);
 
-			log::info << L"Log file \"Application.log\" created" << Endl;
+			log::info << L"Log file \"" << ss.str() << L"\" created." << Endl;
+
+			g_logFilePath = FileSystem::getInstance().getAbsolutePath(ss.str());
 		}
 		else
-			log::error << L"Unable to create log file; logging only to std pipes" << Endl;
+			log::error << L"Unable to create log file; logging only to std pipes." << Endl;
 	}
 #endif
 
 	logSystemInfo();
+	//logDriverVersion();
 
-	Ref< LogTailTarget > logTail = new LogTailTarget();
-	log::info   .setGlobalTarget(new LogDualTarget(logTail, log::info   .getGlobalTarget()));
-	log::warning.setGlobalTarget(new LogDualTarget(logTail, log::warning.getGlobalTarget()));
-	log::error  .setGlobalTarget(new LogDualTarget(logTail, log::error  .getGlobalTarget()));
+	g_logTail = new LogTailTarget();
+
+	log::info   .setGlobalTarget(new LogDualTarget(g_logTail, log::info   .getGlobalTarget()));
+	log::warning.setGlobalTarget(new LogDualTarget(g_logTail, log::warning.getGlobalTarget()));
+	log::error  .setGlobalTarget(new LogDualTarget(g_logTail, log::error  .getGlobalTarget()));
 
 #if defined(_WIN64)
 	log::info << L"Application starting (64-bit) ..." << Endl;
@@ -507,17 +496,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR szCmdLine, int)
 	);
 
 	Ref< amalgam::Application > application;
-
-#if !defined(_DEBUG)
-	try
-#endif
 	{
-#if !defined(_DEBUG)
-		SetErrorMode(SEM_NOGPFAULTERRORBOX);
-		PVOID eh = AddVectoredExceptionHandler(1, exceptionVectoredHandler);
-#endif
-		_set_purecall_handler(pureVirtualCallHandler);
-
 		Path currentPath = FileSystem::getInstance().getAbsolutePath(L".");
 		log::info << L"Working directory: " <<currentPath.getPathName() << Endl;
 
@@ -535,7 +514,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR szCmdLine, int)
 			{
 				log::error << L"Unable to read application settings (" << settingsPath.getPathName() << L")." << Endl;
 				log::error << L"Please reinstall application." << Endl;
-				showErrorDialog(logTail->m_tail);
+				showErrorDialog();
 				return 1;
 			}
 			else
@@ -576,7 +555,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR szCmdLine, int)
 		{
 			log::error << L"Unable to read application settings (" << settingsPath.getPathName() << L")." << Endl;
 			log::error << L"Please reinstall application." << Endl;
-			showErrorDialog(logTail->m_tail);
+			showErrorDialog();
 			return 1;
 		}
 
@@ -626,30 +605,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR szCmdLine, int)
 		else
 		{
 			safeDestroy(application);
-			showErrorDialog(logTail->m_tail);
+			showErrorDialog();
 		}
-
-#if !defined(_DEBUG)
-		RemoveVectoredExceptionHandler(eh);
-#endif
 	}
-#if !defined(_DEBUG)
-	catch (...)
-	{
-		HMODULE hCrashModule;
-		if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, reinterpret_cast<LPCTSTR>(g_exceptionAddress), &hCrashModule))
-		{
-			TCHAR fileName[MAX_PATH];
-			GetModuleFileName(hCrashModule, fileName, sizeof_array(fileName));
-			log::error << L"Unhandled exception ( " << getExceptionString(g_exceptionCode) << L") occurred at 0x" << (uint64_t)g_exceptionAddress << L" in module " << (uint64_t)hCrashModule << L" " << fileName << Endl;
-		}
-		else
-			log::error << L"Unhandled exception ( " << getExceptionString(g_exceptionCode) << L") occurred at 0x" << (uint64_t)g_exceptionAddress << Endl;
-
-		safeDestroy(application);
-		showErrorDialog(logTail->m_tail);
-	}
-#endif
 
 	ui::Application::getInstance()->finalize();
 
