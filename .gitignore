@@ -35,6 +35,13 @@
 *.vcxproj.user
 .vs/
 .vscode/
+# Per-user editor settings (Traktor.Editor writes Traktor.Editor.<user>.config
+# on shutdown with window geometry, last opened workspace, etc.).
+/resources/runtime/configurations/Traktor.Editor.*.config
+!/resources/runtime/configurations/Traktor.Editor.config
+!/resources/runtime/configurations/Traktor.Editor.linux.config
+!/resources/runtime/configurations/Traktor.Editor.osx.config
+!/resources/runtime/configurations/Traktor.Editor.win32.config
 
 # OS cruft.
 .DS_Store
