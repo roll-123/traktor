@@ -21,8 +21,11 @@ CC=ccache gcc
 # <string>, with similar gaps for vector/map/etc. Proper fix is to add
 # explicit includes to each header; this flag unblocks the build in the
 # meantime.
-CC_FORCED_INCLUDES=-include cstddef -include cstdint -include string -include vector -include map -include set -include list -include memory -include functional -include utility -include algorithm
-CC_FLAGS_COMMON=-fno-common -std=c++11 -march=core2 -D _UNICODE -D UNICODE -D __LINUX__ -fPIC -fvisibility=hidden $(CC_FORCED_INCLUDES)
+CC_FORCED_INCLUDES=-include cstddef -include cstdint -include string -include vector -include map -include set -include list -include memory -include functional -include utility -include algorithm -include limits
+# -Wno-template-body: gcc 14+ checks template definitions even if uninstantiated.
+# 3rdp/FbxSdk/2016.1.2 has a typo (mLefttChild) in dead code inside a template
+# that we never instantiate that path of.
+CC_FLAGS_COMMON=-fno-common -std=c++11 -march=core2 -D _UNICODE -D UNICODE -D __LINUX__ -fPIC -fvisibility=hidden -Wno-template-body $(CC_FORCED_INCLUDES)
 CC_FLAGS_DEBUG_SHARED=$(CC_FLAGS_COMMON) -g
 CC_FLAGS_RELEASE_SHARED=$(CC_FLAGS_COMMON) -O3 -g
 CC_FLAGS_DEBUG_STATIC=$(CC_FLAGS_COMMON) -g

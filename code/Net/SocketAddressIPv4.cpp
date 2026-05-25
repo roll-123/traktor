@@ -18,7 +18,8 @@ Copyright 2017 Doctor Entertainment AB. All Rights Reserved.
 
 #if defined(__LINUX__)
 #   include <sys/ioctl.h>
-#   include <sys/sysctl.h>
+// <sys/sysctl.h> was removed from glibc 2.30+ (2019); this file never
+// actually calls sysctl() - it uses SIOCGIFCONF via ioctl() instead.
 #   include <net/if.h>
 #   include <netinet/if_ether.h>
 #endif
