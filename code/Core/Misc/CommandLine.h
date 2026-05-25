@@ -75,20 +75,14 @@ public:
 	{
 		m_file = mbstows(argv[0]);
 
-#if !defined(_WIN32)
-		StringOutputStream ss;
-		for (int i = 1; i < argc; ++i)
-		{
-			if (i > 1)
-				ss << L" ";
-			ss << mbstows(argv[i]);
-		}
-		parse(ss.str());
-#else
+		// Use argv as-is; on POSIX the previous behaviour joined argv with
+		// spaces and re-parsed, which destroyed argv boundaries for args that
+		// contained spaces (e.g. "Gear Up", "Linux, LAN"). The shell already
+		// did the splitting/quoting for us.
 		for (int i = 1; i < argc; ++i)
 		{
 			std::wstring a = mbstows(argv[i]);
-			if (a[0] == L'-')
+			if (!a.empty() && a[0] == L'-')
 			{
 				const wchar_t* cs = a.c_str() + 1;
 				const wchar_t* value = wcschr(cs, L'=');
@@ -106,27 +100,17 @@ public:
 			else
 				m_args.push_back(trim(a));
 		}
-#endif
 	}
 
 	explicit CommandLine(const std::vector< std::wstring >& argv)
 	{
 		m_file = argv[0];
 
-#if !defined(_WIN32)
-		StringOutputStream ss;
-		for (size_t i = 1; i < argv.size(); ++i)
-		{
-			if (i > 1)
-				ss << L" ";
-			ss << argv[i];
-		}
-		parse(ss.str());
-#else
+		// See above; use argv as-is to preserve argument boundaries.
 		for (size_t i = 1; i < argv.size(); ++i)
 		{
 			std::wstring a = argv[i];
-			if (a[0] == L'-')
+			if (!a.empty() && a[0] == L'-')
 			{
 				const wchar_t* cs = a.c_str() + 1;
 				const wchar_t* value = wcschr(cs, L'=');
@@ -144,7 +128,6 @@ public:
 			else
 				m_args.push_back(trim(a));
 		}
-#endif
 	}
 
 	explicit CommandLine(const std::wstring& file, const std::wstring& args)
