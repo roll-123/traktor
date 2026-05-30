@@ -91,11 +91,13 @@ Ref< Model > ModelFormatBlend::read(const Path& filePath, const std::wstring& fi
 	file = nullptr;
 
 	// Execute export script through headless blender process.
+	// Prefer PATH lookup first; Windows AssocQueryString can return OpenWith.exe
+	// when the .blend ProgID points at a non-launchable wrapper (e.g. UWP/Store
+	// installs), which then triggers the "Pick an app" dialog at runtime.
 	std::wstring blenderPath;
-	if (!OS::getInstance().getAssociatedExecutable(L"blend", blenderPath))
+	if (!OS::getInstance().whereIs(L"blender", blenderPath))
 	{
-		// No file association registered; try find executable in environment.
-		if (!OS::getInstance().whereIs(L"blender", blenderPath))
+		if (!OS::getInstance().getAssociatedExecutable(L"blend", blenderPath))
 		{
 			// No path found; try to run executable without path in case system knowns
 			// something we don't.
