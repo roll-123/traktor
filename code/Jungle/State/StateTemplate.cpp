@@ -23,6 +23,10 @@ namespace traktor::jungle
 
 T_IMPLEMENT_RTTI_CLASS(L"traktor.jungle.StateTemplate", StateTemplate, Object)
 
+StateTemplate::StateTemplate() = default;
+
+StateTemplate::~StateTemplate() = default;
+
 void StateTemplate::declare(const IValueTemplate* value)
 {
 	if (value)

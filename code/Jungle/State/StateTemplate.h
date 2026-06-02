@@ -22,6 +22,10 @@ class T_DLLCLASS StateTemplate : public Object
 	T_RTTI_CLASS;
 
 public:
+	StateTemplate();
+
+	virtual ~StateTemplate();
+
 	void declare(const IValueTemplate* value);
 
 	bool match(const State* S) const;
