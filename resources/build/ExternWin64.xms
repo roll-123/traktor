@@ -7249,6 +7249,206 @@
 			</items>
 			<dependencies/>
 		</item>
+				<item type="traktor.sb.Project" version="1">
+			<enable>true</enable>
+			<name>Extern.lwObject</name>
+			<sourcePath>$(TRAKTOR_HOME)/3rdp/lwObject</sourcePath>
+			<configurations>
+				<item type="traktor.sb.Configuration" version="5">
+					<name>DebugShared</name>
+					<targetFormat>TfStaticLibrary</targetFormat>
+					<targetProfile>TpDebug</targetProfile>
+					<precompiledHeader />
+					<includePaths>
+						<item>$(TRAKTOR_HOME)/resources/build/patch/libexpat</item>
+						<item>$(EXPAT_SDK)/lib</item>
+						<item>$(TRAKTOR_HOME)/3rdp/lwObject</item>
+					</includePaths>
+					<definitions>
+						<item>XML_STATIC</item>
+						<item>XML_BUILDING_EXPAT</item>
+						<item>XML_POOR_ENTROPY</item>
+						<item>HAVE_MEMMOVE</item>
+						<item>_CRT_SECURE_NO_WARNINGS</item>
+					</definitions>
+					<libraryPaths />
+					<libraries />
+					<warningLevel>WlNoWarnings</warningLevel>
+					<additionalCompilerOptions />
+					<additionalLinkerOptions />
+					<debugExecutable />
+					<debugArguments />
+					<debugEnvironment />
+					<debugWorkingDirectory />
+					<aggregationItems />
+					<consumerLibraryPath />
+				</item>
+				<item type="traktor.sb.Configuration" version="5">
+					<name>ReleaseShared</name>
+					<targetFormat>TfStaticLibrary</targetFormat>
+					<targetProfile>TpRelease</targetProfile>
+					<precompiledHeader />
+					<includePaths>
+						<item>$(TRAKTOR_HOME)/resources/build/patch/libexpat</item>
+						<item>$(EXPAT_SDK)/lib</item>
+						<item>$(TRAKTOR_HOME)/3rdp/lwObject</item>
+					</includePaths>
+					<definitions>
+						<item>XML_STATIC</item>
+						<item>XML_BUILDING_EXPAT</item>
+						<item>XML_POOR_ENTROPY</item>
+						<item>HAVE_MEMMOVE</item>
+						<item>_CRT_SECURE_NO_WARNINGS</item>
+					</definitions>
+					<libraryPaths />
+					<libraries />
+					<warningLevel>WlNoWarnings</warningLevel>
+					<additionalCompilerOptions />
+					<additionalLinkerOptions />
+					<debugExecutable />
+					<debugArguments />
+					<debugEnvironment />
+					<debugWorkingDirectory />
+					<aggregationItems />
+					<consumerLibraryPath />
+				</item>
+				<item type="traktor.sb.Configuration" version="5">
+					<name>DebugStatic</name>
+					<targetFormat>TfStaticLibrary</targetFormat>
+					<targetProfile>TpDebug</targetProfile>
+					<precompiledHeader />
+					<includePaths>
+						<item>$(TRAKTOR_HOME)/resources/build/patch/libexpat</item>
+						<item>$(EXPAT_SDK)/lib</item>
+						<item>$(TRAKTOR_HOME)/3rdp/lwObject</item>
+					</includePaths>
+					<definitions>
+						<item>XML_STATIC</item>
+						<item>XML_BUILDING_EXPAT</item>
+						<item>XML_POOR_ENTROPY</item>
+						<item>HAVE_MEMMOVE</item>
+						<item>_CRT_SECURE_NO_WARNINGS</item>
+					</definitions>
+					<libraryPaths />
+					<libraries />
+					<warningLevel>WlNoWarnings</warningLevel>
+					<additionalCompilerOptions />
+					<additionalLinkerOptions />
+					<debugExecutable />
+					<debugArguments />
+					<debugEnvironment />
+					<debugWorkingDirectory />
+					<aggregationItems>
+						<item type="traktor.sb.AggregationItem">
+							<sourceFile>Extern.expat.pdb</sourceFile>
+							<targetPath>debugstatic</targetPath>
+						</item>
+						<item type="traktor.sb.AggregationItem">
+							<sourceFile>Extern.expat.lib</sourceFile>
+							<targetPath>debugstatic</targetPath>
+						</item>
+					</aggregationItems>
+					<consumerLibraryPath>debugstatic</consumerLibraryPath>
+				</item>
+				<item type="traktor.sb.Configuration" version="5">
+					<name>ReleaseStatic</name>
+					<targetFormat>TfStaticLibrary</targetFormat>
+					<targetProfile>TpRelease</targetProfile>
+					<precompiledHeader />
+					<includePaths>
+						<item>$(TRAKTOR_HOME)/resources/build/patch/libexpat</item>
+						<item>$(EXPAT_SDK)/lib</item>
+						<item>$(TRAKTOR_HOME)/3rdp/lwObject</item>
+					</includePaths>
+					<definitions>
+						<item>XML_STATIC</item>
+						<item>XML_BUILDING_EXPAT</item>
+						<item>XML_POOR_ENTROPY</item>
+						<item>HAVE_MEMMOVE</item>
+						<item>_CRT_SECURE_NO_WARNINGS</item>
+					</definitions>
+					<libraryPaths />
+					<libraries />
+					<warningLevel>WlNoWarnings</warningLevel>
+					<additionalCompilerOptions />
+					<additionalLinkerOptions />
+					<debugExecutable />
+					<debugArguments />
+					<debugEnvironment />
+					<debugWorkingDirectory />
+					<aggregationItems>
+						<item type="traktor.sb.AggregationItem">
+							<sourceFile>Extern.expat.pdb</sourceFile>
+							<targetPath>releasestatic</targetPath>
+						</item>
+						<item type="traktor.sb.AggregationItem">
+							<sourceFile>Extern.expat.lib</sourceFile>
+							<targetPath>releasestatic</targetPath>
+						</item>
+					</aggregationItems>
+					<consumerLibraryPath>releasestatic</consumerLibraryPath>
+				</item>
+			</configurations>
+			<items>
+				<item type="traktor.sb.File">
+					<fileName>clip.c</fileName>
+					<excludeFilter />
+					<items />
+				</item>
+				<item type="traktor.sb.File">
+					<fileName>envelope.c</fileName>
+					<excludeFilter />
+					<items />
+				</item>
+				<item type="traktor.sb.File">
+					<fileName>list.c</fileName>
+					<excludeFilter />
+					<items />
+				</item>
+				<item type="traktor.sb.File">
+					<fileName>lwio.c</fileName>
+					<excludeFilter />
+					<items />
+				</item>
+				<item type="traktor.sb.File">
+					<fileName>lwo2.c</fileName>
+					<excludeFilter />
+					<items />
+				</item>
+				<item type="traktor.sb.File">
+					<fileName>lwob.c</fileName>
+					<excludeFilter />
+					<items />
+				</item>
+				<item type="traktor.sb.File">
+					<fileName>pntspols.c</fileName>
+					<excludeFilter />
+					<items />
+				</item>
+				<item type="traktor.sb.File">
+					<fileName>surface.c</fileName>
+					<excludeFilter />
+					<items />
+				</item>
+				<item type="traktor.sb.File">
+					<fileName>vecmath.c</fileName>
+					<excludeFilter />
+					<items />
+				</item>
+				<item type="traktor.sb.File">
+					<fileName>vmap.c</fileName>
+					<excludeFilter />
+					<items />
+				</item>
+				<item type="traktor.sb.File">
+					<fileName>*.h</fileName>
+					<excludeFilter />
+					<items />
+				</item>
+			</items>
+			<dependencies />
+		</item>
+		
 	</projects>
 	<startupProject/>
 </object>

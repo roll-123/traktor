@@ -6989,6 +6989,11 @@
 																		<excludeFilter/>
 																		<items/>
 																	</item>
+																	<item type="traktor.sb.File" version="1">
+																		<fileName>Formats/Lwo/*.*</fileName>
+																		<excludeFilter/>
+																		<items/>
+																	</item>
 																</items>
 															</item>
 														</items>
@@ -7223,7 +7228,13 @@
 														<solutionFileName>ExternWin64.xms</solutionFileName>
 														<projectName>Extern.ufbx</projectName>
 													</item>
-												</dependencies>
+																			<item type="traktor.sb.ExternalDependency" version="3">
+								<inheritIncludePaths>true</inheritIncludePaths>
+								<link>LnkYes</link>
+								<solutionFileName>ExternWin64.xms</solutionFileName>
+								<projectName>Extern.lwObject</projectName>
+							</item>
+</dependencies>
 											</project>
 										</item>
 									</dependencies>
