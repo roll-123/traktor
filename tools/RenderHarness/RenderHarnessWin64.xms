@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<object type="traktor.sb.Solution" version="5">
+	<name>RenderHarness Win64</name>
+	<rootPath>$(TRAKTOR_HOME)/tools/RenderHarness/build/win64</rootPath>
+	<aggregateOutputPath>$(TRAKTOR_HOME)/bin/latest/win64</aggregateOutputPath>
+	<projects>
+		<item type="traktor.sb.Project" version="1">
+			<enable>true</enable>
+			<name>RenderHarness</name>
+			<sourcePath>$(TRAKTOR_HOME)/tools/RenderHarness/code</sourcePath>
+			<configurations>
+				<item type="traktor.sb.Configuration" version="5">
+					<name>DebugShared</name>
+					<targetFormat>TfExecutableConsole</targetFormat>
+					<targetProfile>TpDebug</targetProfile>
+					<precompiledHeader/>
+					<includePaths>
+						<item>$(TRAKTOR_HOME)/code</item>
+					</includePaths>
+					<definitions/>
+					<libraryPaths/>
+					<libraries/>
+					<warningLevel>WlCompilerDefault</warningLevel>
+					<additionalCompilerOptions/>
+					<additionalLinkerOptions/>
+					<debugExecutable>$(TargetPath)</debugExecutable>
+					<debugArguments/>
+					<debugEnvironment>PATH=$(AGGREGATE_OUTPUT_PATH)\debugshared;$(PATH)</debugEnvironment>
+					<debugWorkingDirectory>$(TRAKTOR_HOME)</debugWorkingDirectory>
+					<aggregationItems/>
+					<consumerLibraryPath/>
+				</item>
+				<item type="traktor.sb.Configuration" version="5">
+					<name>ReleaseShared</name>
+					<targetFormat>TfExecutableConsole</targetFormat>
+					<targetProfile>TpRelease</targetProfile>
+					<precompiledHeader/>
+					<includePaths>
+						<item>$(TRAKTOR_HOME)/code</item>
+					</includePaths>
+					<definitions/>
+					<libraryPaths/>
+					<libraries/>
+					<warningLevel>WlCompilerDefault</warningLevel>
+					<additionalCompilerOptions/>
+					<additionalLinkerOptions/>
+					<debugExecutable>$(TargetPath)</debugExecutable>
+					<debugArguments/>
+					<debugEnvironment>PATH=$(AGGREGATE_OUTPUT_PATH)\releaseshared;$(PATH)</debugEnvironment>
+					<debugWorkingDirectory>$(TRAKTOR_HOME)</debugWorkingDirectory>
+					<aggregationItems/>
+					<consumerLibraryPath/>
+				</item>
+			</configurations>
+			<items>
+				<item type="traktor.sb.File" version="1">
+					<fileName>*.*</fileName>
+					<excludeFilter/>
+					<items/>
+				</item>
+			</items>
+			<dependencies>
+				<item type="traktor.sb.ExternalDependency" version="3">
+					<inheritIncludePaths>true</inheritIncludePaths>
+					<link>LnkYes</link>
+					<solutionFileName>$(TRAKTOR_HOME)/resources/build/TraktorWin64.xms</solutionFileName>
+					<projectName>Traktor.Core</projectName>
+				</item>
+				<item type="traktor.sb.ExternalDependency" version="3">
+					<inheritIncludePaths>true</inheritIncludePaths>
+					<link>LnkYes</link>
+					<solutionFileName>$(TRAKTOR_HOME)/resources/build/TraktorWin64.xms</solutionFileName>
+					<projectName>Traktor.Xml</projectName>
+				</item>
+				<item type="traktor.sb.ExternalDependency" version="3">
+					<inheritIncludePaths>true</inheritIncludePaths>
+					<link>LnkYes</link>
+					<solutionFileName>$(TRAKTOR_HOME)/resources/build/TraktorWin64.xms</solutionFileName>
+					<projectName>Traktor.Database</projectName>
+				</item>
+				<item type="traktor.sb.ExternalDependency" version="3">
+					<inheritIncludePaths>true</inheritIncludePaths>
+					<link>LnkYes</link>
+					<solutionFileName>$(TRAKTOR_HOME)/resources/build/TraktorWin64.xms</solutionFileName>
+					<projectName>Traktor.Database.Local</projectName>
+				</item>
+				<item type="traktor.sb.ExternalDependency" version="3">
+					<inheritIncludePaths>true</inheritIncludePaths>
+					<link>LnkYes</link>
+					<solutionFileName>$(TRAKTOR_HOME)/resources/build/TraktorWin64.xms</solutionFileName>
+					<projectName>Traktor.Drawing</projectName>
+				</item>
+				<item type="traktor.sb.ExternalDependency" version="3">
+					<inheritIncludePaths>true</inheritIncludePaths>
+					<link>LnkYes</link>
+					<solutionFileName>$(TRAKTOR_HOME)/resources/build/TraktorWin64.xms</solutionFileName>
+					<projectName>Traktor.Model</projectName>
+				</item>
+				<item type="traktor.sb.ExternalDependency" version="3">
+					<inheritIncludePaths>true</inheritIncludePaths>
+					<link>LnkYes</link>
+					<solutionFileName>$(TRAKTOR_HOME)/resources/build/TraktorWin64.xms</solutionFileName>
+					<projectName>Traktor.Editor</projectName>
+				</item>
+				<item type="traktor.sb.ExternalDependency" version="3">
+					<inheritIncludePaths>true</inheritIncludePaths>
+					<link>LnkYes</link>
+					<solutionFileName>$(TRAKTOR_HOME)/resources/build/TraktorWin64.xms</solutionFileName>
+					<projectName>Traktor.Mesh.Editor</projectName>
+				</item>
+			</dependencies>
+		</item>
+	</projects>
+</object>
