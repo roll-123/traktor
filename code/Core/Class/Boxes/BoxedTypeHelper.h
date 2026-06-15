@@ -31,6 +31,7 @@ class Color4f;
 class Color4ub;
 class Scalar;
 class Any;
+class Guid;
 
 // Specializations for primitive types that don't have RTTI
 template <> struct BoxedInnerTypeName< float, false > { static std::wstring get() { return L"float"; } };
@@ -53,5 +54,6 @@ template <> struct BoxedInnerTypeName< Color4f, false > { static std::wstring ge
 template <> struct BoxedInnerTypeName< Color4ub, false > { static std::wstring get() { return L"traktor.Color4ub"; } };
 template <> struct BoxedInnerTypeName< Scalar, false > { static std::wstring get() { return L"traktor.Scalar"; } };
 template <> struct BoxedInnerTypeName< Any, false > { static std::wstring get() { return L"traktor.Any"; } };
+template <> struct BoxedInnerTypeName< Guid, false > { static std::wstring get() { return L"traktor.Guid"; } };
 
 }
