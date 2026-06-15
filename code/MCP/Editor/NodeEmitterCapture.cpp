@@ -1962,7 +1962,7 @@ const std::map< std::wstring, std::wstring >& nodeEmitterCapture()
 		const auto existing = cx.getLayout().getByName(parameterName);
 		if (existing != nullptr)
 		{
-			if (auto existingAS = dynamic_type_cast< GlslAccelerationStructure* >(existing))
+)NODESRC" LR"NODESRC(			if (auto existingAS = dynamic_type_cast< GlslAccelerationStructure* >(existing))
 			{
 				// Acceleration structure already exist.
 				existingAS->addStage(cx.getBindStage());
@@ -2534,7 +2534,7 @@ const std::map< std::wstring, std::wstring >& nodeEmitterCapture()
 				break;
 
 			case GlslType::Texture3D:
-				assign(f, out) << L"textureLod(sampler3D(__bindlessTextures3D__[" << textureName << L"], " << samplerName << L"), " << texCoord->cast(GlslType::Float3) << L", " << (mip != nullptr ? mip->cast(GlslType::Float) : L"0.0") << L");" << Endl;
+)NODESRC" LR"NODESRC(				assign(f, out) << L"textureLod(sampler3D(__bindlessTextures3D__[" << textureName << L"], " << samplerName << L"), " << texCoord->cast(GlslType::Float3) << L", " << (mip != nullptr ? mip->cast(GlslType::Float) : L"0.0") << L");" << Endl;
 				break;
 
 			case GlslType::TextureCube:

@@ -93,7 +93,9 @@ bool AstcCompressor::compress(Writer& writer, const RefArray< drawing::Image >& 
 	}
 
 	astcenc_context* context = nullptr;
-	result = astcenc_context_alloc(&config, 1, &context, nullptr);
+	// GearUp port: our vendored 3rdp/astc-encoder predates the 4th (optional,
+	// null here) parameter upstream added in 8107b05ddf; use the 3-arg form.
+	result = astcenc_context_alloc(&config, 1, &context);
 	if (result != ASTCENC_SUCCESS)
 	{
 		log::error << L"Unable to compress using ASTC; failed to allocate context." << Endl;

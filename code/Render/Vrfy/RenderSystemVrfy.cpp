@@ -7,8 +7,14 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 #if defined(_WIN32) || defined(__LINUX__)
-#	define T_USE_AFTERMATH
-#	define T_USE_RENDERDOC
+	// GearUp port: the Vrfy render system is a debug/validation wrapper the port
+	// never selects (boot uses RenderSystemVk directly). Its external debug SDKs
+	// are not vendored — NVIDIA Aftermath is gated (dev-account download), and our
+	// local RenderDoc header (1.36) predates the RENDERDOC_API_1_7_0 struct this
+	// code uses — so both integrations are left disabled. Re-enable by vendoring
+	// the matching SDKs.
+//#	define T_USE_AFTERMATH
+//#	define T_USE_RENDERDOC
 #endif
 
 #if defined(T_USE_AFTERMATH)
