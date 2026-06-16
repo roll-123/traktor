@@ -8,6 +8,7 @@
  */
 #include "Render/Editor/Shader/External.h"
 
+#include "Core/Misc/MD5.h"
 #include "Core/Serialization/AttributePrivate.h"
 #include "Core/Serialization/AttributeReadOnly.h"
 #include "Core/Serialization/AttributeType.h"
@@ -15,6 +16,8 @@
 #include "Core/Serialization/MemberComplex.h"
 #include "Core/Serialization/MemberRefArray.h"
 #include "Core/Serialization/MemberSmallMap.h"
+
+#include <cstring>
 #include "Render/Editor/Edge.h"
 #include "Render/Editor/InputPin.h"
 #include "Render/Editor/OutputPin.h"
@@ -196,6 +199,24 @@ private:
 	mutable size_t m_index;
 };
 
+// External versions < 2 stored pins by NAME only (no id). Reading them leaves every pin with the
+// null Guid, so a fragment with >=2 pins of a direction trips ShaderGraphValidator's "duplicated ids"
+// integrity check and the whole graph fails to read. (The release editor skips that check, so such
+// legacy graphs validate live yet fail at cook time.) Synthesize a stable, unique id per pin from the
+// fragment guid + direction + name; FragmentLinker matches External pins to fragment ports BY NAME, so
+// the id value only needs to be unique within the node.
+Guid synthesizeLegacyPinId(const Guid& fragmentGuid, const wchar_t* direction, const std::wstring& name)
+{
+	const std::wstring seed = fragmentGuid.format() + L"|" + direction + L"|" + name;
+	MD5 md5;
+	md5.begin();
+	md5.feedBuffer(seed.c_str(), seed.size() * sizeof(wchar_t));
+	md5.end();
+	uint8_t data[16];
+	std::memcpy(data, md5.get(), 16);
+	return Guid(data);
+}
+
 struct SortInputPinPredicate
 {
 	bool operator()(const InputPin* pl, const InputPin* pr) const
@@ -348,6 +369,19 @@ void External::serialize(ISerializer& s)
 	{
 		SmallMap< std::wstring, float > values;
 		s >> MemberSmallMap< std::wstring, float >(L"values", values);
+	}
+
+	// Legacy (version < 2) pins carry no id; give each a stable unique id so the graph passes the
+	// "duplicated ids" integrity check at cook time (see synthesizeLegacyPinId above).
+	if (s.getDirection() == ISerializer::Direction::Read && s.getVersion() < 2)
+	{
+		for (auto pin : m_inputPins)
+			if (pin->getId().isNull())
+				*pin = InputPin(this, synthesizeLegacyPinId(m_fragmentGuid, L"in", pin->getName()), pin->getName(), pin->isOptional());
+
+		for (auto pin : m_outputPins)
+			if (pin->getId().isNull())
+				*pin = OutputPin(this, synthesizeLegacyPinId(m_fragmentGuid, L"out", pin->getName()), pin->getName());
 	}
 }
 
