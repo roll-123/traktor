@@ -6951,6 +6951,11 @@
 																		<excludeFilter/>
 																		<items/>
 																	</item>
+																	<item type="traktor.sb.File" version="1">
+																		<fileName>Formats/Lws/*.*</fileName>
+																		<excludeFilter/>
+																		<items/>
+																	</item>
 																</items>
 															</item>
 															<item type="traktor.sb.Filter">
