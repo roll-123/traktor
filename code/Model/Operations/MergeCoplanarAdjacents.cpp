@@ -140,9 +140,11 @@ bool MergeCoplanarAdjacents::apply(Model& model) const
 					leftPolygon.setVertices(Polygon::vertices_t(mergedVertices.begin(), mergedVertices.end()));
 					rightPolygon.clearVertices();
 
-					// Re-build adjacency.
-					adjacency.remove(sharedPolygon, false);
-					adjacency.update(i);
+					// Rebuild adjacency. The merge changes polygon topology (the merged polygon's edge
+					// count changes and the right polygon is emptied); the incremental update/remove/add
+					// paths assume an unchanged edge count and corrupt the packed share-data on such
+					// merges, so rebuild the adjacency from the current model instead.
+					adjacency.rebuild();
 
 					++merged;
 					break;

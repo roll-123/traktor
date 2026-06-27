@@ -62,6 +62,9 @@ public:
 	/*! Update polygon in adjacency structure. */
 	void update(uint32_t polygon);
 
+	/*! Rebuild the entire adjacency from the current model. */
+	void rebuild();
+
 	/*! Return half edge from polygon edge. */
 	uint32_t getEdge(uint32_t polygon, uint32_t polygonEdge) const;
 

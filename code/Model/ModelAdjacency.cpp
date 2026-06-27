@@ -34,6 +34,16 @@ ModelAdjacency::ModelAdjacency(const Model* model, const AlignedVector< uint32_t
 		add(polygon);
 }
 
+void ModelAdjacency::rebuild()
+{
+	m_edges.resize(0);
+	m_shareData.resize(0);
+	m_polygonToFirstEdge.resize(0);
+	m_polygonToFirstEdge.resize(m_model->getPolygonCount(), c_InvalidIndex);
+	for (uint32_t i = 0; i < m_model->getPolygonCount(); ++i)
+		add(i);
+}
+
 void ModelAdjacency::add(uint32_t polygon)
 {
 	T_FATAL_ASSERT(polygon < m_model->getPolygonCount());
