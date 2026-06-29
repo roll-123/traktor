@@ -115,10 +115,14 @@ void WorldLayer::preUpdate(const UpdateInfo& info)
 		m_worldRenderer = nullptr;
 		m_scene.consume();
 
-		// Get initial camera.
+		// Get initial camera. HEAD's default is "Camera0"; Gear Up scenes (and
+		// the pre-HEAD engine) name the primary camera "Camera", so fall back to
+		// that. Persist the resolved id so it survives hot reload (upstream).
 		if (m_cameraEntityId.isNull())
 		{
 			m_cameraEntity = m_scene->getWorld()->getEntity(L"Camera0");
+			if (!m_cameraEntity)
+				m_cameraEntity = m_scene->getWorld()->getEntity(L"Camera");
 			m_cameraEntityId = (m_cameraEntity != nullptr) ? m_cameraEntity->getId() : Guid();
 		}
 	}
