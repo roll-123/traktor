@@ -531,7 +531,10 @@ bool DefaultRenderControl::createRenderControl(int32_t type)
 
 void DefaultRenderControl::eventResize(ui::SizeEvent* event)
 {
-	m_context->enqueueRedraw(nullptr);
+	// A size event can be delivered while the scene-editor context is not (yet)
+	// bound (e.g. a resize during an early/failed render-control create); guard.
+	if (m_context)
+		m_context->enqueueRedraw(nullptr);
 }
 
 void DefaultRenderControl::eventSliderDebugChange(ui::ContentChangeEvent* event)

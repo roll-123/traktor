@@ -88,12 +88,16 @@ bool Form::isMinimized() const
 
 void Form::hideProgress()
 {
-	static_cast< IForm* >(m_widget)->hideProgress();
+	// Build progress can be reported during editor startup (e.g. render-system
+	// create triggering a shader build) before the form widget exists; no-op then.
+	if (m_widget)
+		static_cast< IForm* >(m_widget)->hideProgress();
 }
 
 void Form::showProgress(int32_t current, int32_t total)
 {
-	static_cast< IForm* >(m_widget)->showProgress(current, total);
+	if (m_widget)
+		static_cast< IForm* >(m_widget)->showProgress(current, total);
 }
 
 bool Form::isEnable(bool includingParents) const
