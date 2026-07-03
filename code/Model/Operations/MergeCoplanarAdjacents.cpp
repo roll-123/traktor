@@ -136,6 +136,12 @@ bool MergeCoplanarAdjacents::apply(Model& model) const
 							mergedVertices.erase(mergedVertices.begin() + (size_t)removeIndex);
 					}
 
+					// Polygon vertices are a fixed-capacity StaticVector; a merge result beyond
+					// capacity cannot be represented (push_back past capacity silently corrupts
+					// adjacent polygons in release builds). Leave such pairs unmerged.
+					if (mergedVertices.size() > Polygon::vertices_t::Capacity)
+						continue;
+
 					// Set all vertices in left polygon and null out right polygon.
 					leftPolygon.setVertices(Polygon::vertices_t(mergedVertices.begin(), mergedVertices.end()));
 					rightPolygon.clearVertices();
