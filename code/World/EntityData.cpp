@@ -130,7 +130,9 @@ IEntityComponentData* EntityData::getComponent(const TypeInfo& componentType) co
 {
 	for (auto component : m_components)
 	{
-		if (is_type_a(componentType, type_of(component)))
+		// is_type_of, not is_type_a: match derived component data types the same
+		// way the runtime Entity::getComponent matches derived components.
+		if (is_type_of(componentType, type_of(component)))
 			return component;
 	}
 	return nullptr;
