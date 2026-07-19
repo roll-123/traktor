@@ -125,14 +125,18 @@ bool MeshPipeline::buildOutput(
 
 	// Cleanup model suitable for physics.
 	model->clear(model::Model::CfColors | model::Model::CfNormals | model::Model::CfTexCoords | model::Model::CfJoints);
+
+	// Apply the asset scale factor FIRST. CleanDuplicates and the margin shrink below use absolute,
+	// metre-tuned thresholds (1 cm merge, m-scale margin); scaling a sub-metre proxy up afterwards is
+	// too late -- the merge would already have collapsed it to an empty/degenerate model (empty hull).
+	model->apply(model::Transform(
+		scale(meshAsset->getScaleFactor())
+	));
+
 	model->apply(model::CleanDuplicates(0.01f));
 
 	if (meshAsset->getReduce() < 1.0f)
 		model->apply(model::Reduce(meshAsset->getReduce()));
-
-	model->apply(model::Transform(
-		scale(meshAsset->getScaleFactor())
-	));
 
 	switch (meshAsset->getCenter())
 	{
@@ -162,8 +166,10 @@ bool MeshPipeline::buildOutput(
 
 	// Shrink model by margin; need to calculate normals from positions only
 	// as we don't want smooth groups or anything else mess with the normals.
+	Ref< model::Model > unshrunk;
 	if (abs(meshAsset->m_margin) > FUZZY_EPSILON)
 	{
+		unshrunk = new model::Model(*model);	// snapshot for the collapse fallback below
 		model->apply(model::CalculateNormals(false));
 		model->apply(model::ScaleAlongNormal(-meshAsset->m_margin));
 		model->clear(model::Model::CfNormals);
@@ -174,6 +180,18 @@ bool MeshPipeline::buildOutput(
 	model->apply(model::Triangulate());
 	model->apply(model::CleanDegenerate());
 	model->apply(model::CleanDuplicates(0.01f));
+
+	// A collision margin larger than half the proxy's thinnest extent collapses it entirely
+	// (common for a tank's small parts now that FBX imports at metre scale). Fall back to the
+	// unshrunk geometry so the proxy still yields shape + hull triangles instead of nothing.
+	if (unshrunk && model->getPolygonCount() == 0)
+	{
+		log::warning << L"Collision proxy collapsed by margin " << meshAsset->m_margin << L" m; using unshrunk geometry." << Endl;
+		model = unshrunk;
+		model->apply(model::Triangulate());
+		model->apply(model::CleanDegenerate());
+		model->apply(model::CleanDuplicates(0.01f));
+	}
 
 	// Calculate bounding box; used for center of gravity estimation.
 	const Aabb3 boundingBox = model->getBoundingBox();
@@ -297,10 +315,14 @@ bool MeshPipeline::buildOutput(
 			Vtotal += V;
 		}
 
-		for (auto& position : positions)
-			position -= Voffset / Vtotal;
-
-		centerOfGravity += Voffset / Vtotal;
+		// Guard a zero/degenerate hull volume (empty or coplanar hull) -- dividing by it yields NaN
+		// positions that silently corrupt the collision mesh.
+		if (Vtotal > FUZZY_EPSILON)
+		{
+			for (auto& position : positions)
+				position -= Voffset / Vtotal;
+			centerOfGravity += Voffset / Vtotal;
+		}
 		log::debug << L"Hull volume " << Vtotal << L" unit^3." << Endl;
 	}
 
@@ -313,6 +335,30 @@ bool MeshPipeline::buildOutput(
 		log::debug << L"Offset " << centerOfGravity << L"." << Endl;
 	}
 	log::debug << meshAsset->m_margin << L" unit(s) margin." << Endl;
+
+	// Diagnostic: a dynamic body needs non-empty vertices + hull; a static body needs shape triangles.
+	// Flag empty collision output so the offending source mesh (and its scale) is identifiable in the
+	// cook log -- pairs with PhysicsManagerBullet's "mesh hull empty" / "collision mesh empty".
+	if (positions.empty() || meshShapeTriangles.empty() || (meshAsset->m_calculateConvexHull && meshHullIndices.empty()))
+	{
+		const Vector4 extent = boundingBox.mx - boundingBox.mn;
+		log::warning << L"Physics mesh '" << meshAsset->getFileName().getOriginal() << L"': "
+			<< int32_t(positions.size()) << L" vert, " << int32_t(meshShapeTriangles.size()) << L" shapeTri, "
+			<< int32_t(meshHullTriangles.size()) << L" hullTri, " << int32_t(meshHullIndices.size())
+			<< L" hullIdx; bbox extent " << extent << L", margin " << meshAsset->m_margin
+			<< L" -- EMPTY collision output; body creation will fail at runtime." << Endl;
+	}
+
+	// Robustness: a dynamic body's btConvexHullShape needs a non-empty hull point set. If the offline
+	// incremental hull produced nothing (a degenerate/near-planar proxy it bailed on) but geometry still
+	// exists, hand the runtime every position and let Bullet hull the point cloud -- keeps the body
+	// instead of dropping it ("mesh hull empty"). The warning above still records that this happened.
+	if (meshAsset->m_calculateConvexHull && meshHullIndices.empty() && !positions.empty())
+	{
+		meshHullIndices.reserve(positions.size());
+		for (uint32_t i = 0; i < uint32_t(positions.size()); ++i)
+			meshHullIndices.push_back(i);
+	}
 
 	Mesh mesh;
 	mesh.setVertices(positions);

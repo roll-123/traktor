@@ -685,7 +685,7 @@ Ref< Body > PhysicsManagerBullet::createBody(resource::IResourceManager* resourc
 			const auto& hullIndices = mesh->getHullIndices();
 			if (vertices.empty() || hullIndices.empty())
 			{
-				log::error << L"Unable to create body, mesh hull empty." << Endl;
+				log::error << L"Unable to create body, mesh hull empty (" << Guid(meshShape->getMesh()).format() << L")." << Endl;
 				return nullptr;
 			}
 
@@ -703,6 +703,11 @@ Ref< Body > PhysicsManagerBullet::createBody(resource::IResourceManager* resourc
 		}
 		else
 		{
+			if (mesh->getVertices().empty() || mesh->getShapeTriangles().empty())
+			{
+				log::error << L"Unable to create body, collision mesh empty (" << Guid(meshShape->getMesh()).format() << L")." << Endl;
+				return nullptr;
+			}
 			MeshProxyIndexVertexArray* indexVertexArray = new MeshProxyIndexVertexArray(mesh);
 			shape = new btBvhTriangleMeshShape(indexVertexArray, true);
 		}
@@ -777,6 +782,11 @@ Ref< Body > PhysicsManagerBullet::createBody(resource::IResourceManager* resourc
 	}
 	else
 	{
+		if (mesh->getVertices().empty() || mesh->getShapeTriangles().empty())
+		{
+			log::error << L"Unable to create body, collision mesh empty." << Endl;
+			return nullptr;
+		}
 		MeshProxyIndexVertexArray* indexVertexArray = new MeshProxyIndexVertexArray(resource::Proxy< Mesh >(const_cast< Mesh* >(mesh)));
 		shape = new btBvhTriangleMeshShape(indexVertexArray, true);
 	}
