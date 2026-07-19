@@ -51,7 +51,7 @@ struct HullFaceAdjacency
 	}
 };
 
-uint32_t calculateAdjacency(const AlignedVector< HullFace >& faces, AlignedVector< HullFaceAdjacency >& outAdjacency)
+uint32_t calculateAdjacency(const AlignedVector< Vector4 >& vertices, const AlignedVector< HullFace >& faces, AlignedVector< HullFaceAdjacency >& outAdjacency)
 {
 	uint32_t errorCount = 0;
 	for (uint32_t i = 0; i < uint32_t(faces.size()); ++i)
@@ -60,8 +60,12 @@ uint32_t calculateAdjacency(const AlignedVector< HullFace >& faces, AlignedVecto
 
 		for (uint32_t j = 0; j < 3; ++j)
 		{
-			const int32_t a1 = faces[i].i[j];
-			const int32_t a2 = faces[i].i[(j + 1) % 3];
+			// Match shared edges by vertex position rather than index. Source meshes
+			// imported with split vertices (a single geometric vertex duplicated for
+			// distinct normals/UVs) reference different indices for the same position,
+			// so an index compare reports a closed hull as having incomplete adjacency.
+			const Vector4& a1 = vertices[faces[i].i[j]];
+			const Vector4& a2 = vertices[faces[i].i[(j + 1) % 3]];
 
 			for (uint32_t k = 0; k < uint32_t(faces.size()) && adj.n[j] == ~0U; ++k)
 			{
@@ -70,8 +74,8 @@ uint32_t calculateAdjacency(const AlignedVector< HullFace >& faces, AlignedVecto
 
 				for (uint32_t m = 0; m < 3; ++m)
 				{
-					const int na1 = faces[k].i[m];
-					const int na2 = faces[k].i[(m + 1) % 3];
+					const Vector4& na1 = vertices[faces[k].i[m]];
+					const Vector4& na2 = vertices[faces[k].i[(m + 1) % 3]];
 					if (a1 == na2 && a2 == na1)
 					{
 						adj.n[j] = k;
@@ -96,6 +100,11 @@ T_IMPLEMENT_RTTI_CLASS(L"traktor.model.CalculateConvexHull", CalculateConvexHull
 bool CalculateConvexHull::apply(Model& model) const
 {
 	uint32_t errorCount = 0;
+
+	// Need at least a tetrahedron's worth of geometry; bail cleanly instead of dereferencing an
+	// empty polygon/position list (e.g. a collision proxy collapsed by an oversized margin).
+	if (model.getPolygons().empty() || model.getPositions().size() < 4)
+		return false;
 
 	AlignedVector< Vector4 > vertices = model.getPositions();
 
@@ -137,7 +146,7 @@ bool CalculateConvexHull::apply(Model& model) const
 	faces.push_back(HullFace(i0, i2, it));
 
 	AlignedVector< HullFaceAdjacency > adjacency;
-	errorCount = calculateAdjacency(faces, adjacency);
+	errorCount = calculateAdjacency(vertices, faces, adjacency);
 
 	if (errorCount > 0)
 		T_DEBUG(errorCount << L" adjanceny error(s)");
@@ -197,7 +206,7 @@ bool CalculateConvexHull::apply(Model& model) const
 
 		// Recalculate adjacency.
 		adjacency.resize(0);
-		errorCount = calculateAdjacency(faces, adjacency);
+		errorCount = calculateAdjacency(vertices, faces, adjacency);
 		if (errorCount > 0)
 			T_DEBUG(errorCount << L" adjanceny error(s)");
 	}
