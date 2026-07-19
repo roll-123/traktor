@@ -45,11 +45,19 @@ bool convertMesh(
 	const Matrix44 Mglobal = axisTransform * Mnode;
 	const Matrix44 MglobalN = normalize(Mglobal);
 
+	// Gear Up FBX assets are exported in place: the world position is baked into the
+	// vertices (Lcl Translation zero) and the node's rotation pivot marks the asset's
+	// anchor. The original FBX SDK importer re-based geometry onto the pivot
+	// ((world - pivot), pivot in the raw file frame); replicate that so in-place
+	// exported props land at their entity origin.
+	const ufbx_vec3 zeroPivot = { 0.0, 0.0, 0.0 };
+	const Vector4 pivot = convertPosition(ufbx_find_vec3(&meshNode->props, "RotationPivot", zeroPivot));
+
 	outModel.reservePositions(positionBase + meshNode->mesh->num_vertices);
 	for (size_t i = 0; i <  meshNode->mesh->num_vertices; ++i)
 	{
-		const Vector4 v = Mglobal * convertPosition(meshNode->mesh->vertices[i]);
-		outModel.addPosition(v);
+		const Vector4 v = Mnode * convertPosition(meshNode->mesh->vertices[i]);
+		outModel.addPosition((axisTransform * (v - pivot)).xyz1());
 	}
 
 	// Convert joint vertex weights; model must contain joints.

@@ -124,7 +124,11 @@ Ref< Model > ModelFormatFbx::read(const Path& filePath, const std::wstring& filt
 {
 	ufbx_load_opts opts = {};
 	opts.load_external_files = true;
-	opts.target_unit_meters = (ufbx_real)1;
+	// No unit normalization: Gear Up's original FBX SDK importer read raw file units as
+	// engine metres (with the node transform stack, including exporter-written Lcl scaling,
+	// applied) and all GU FBX content is authored to that convention; target_unit_meters
+	// shrank every mesh 100x. The in-place world offset baked into prop vertices is
+	// handled by the rotation-pivot re-base in MeshConverter.
 	ufbx_scene* scene = ufbx_load_file(wstombs(filePath.getPathNameOS()).c_str(), &opts, nullptr);
 	if (!scene)
 		return nullptr;
