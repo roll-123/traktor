@@ -393,7 +393,7 @@ bool SolutionBuilderMsvcVCXProj::generateProject(
 
 			const Path aggregateOutputPath = FileSystem::getInstance().getAbsolutePath(solution->getAggregateOutputPath());
 
-			os << L"@pushd \"$(SolutionDir)" << name << L"\"" << Endl;
+			os << L"@pushd \"$(ProjectDir)..\\" << name << L"\"" << Endl;
 			for (auto aggregationItem : aggregationItems)
 			{
 				const Path sourceFile = Path(aggregationItem->getSourceFile());
