@@ -10,6 +10,7 @@
 
 #include "Animation/Animation/RtStateGraph.h"
 #include "Animation/Animation/RtStateTransition.h"
+#include "Core/Log/Log.h"
 #include "Core/Serialization/ISerializer.h"
 #include "Core/Serialization/Member.h"
 #include "Core/Serialization/MemberAlignedVector.h"
@@ -24,6 +25,16 @@ T_IMPLEMENT_RTTI_FACTORY_CLASS(L"traktor.animation.RtStateTransitionData", 0, Rt
 
 Ref< RtStateTransition > RtStateTransitionData::createInstance(RtStateGraph* stateGraph) const
 {
+	// A transition referencing a state outside the graph means the resource is
+	// corrupt or from a mismatched compiler; fail creation instead of reading
+	// out of bounds (a stray null here crashes evaluation much later).
+	const int32_t stateCount = (int32_t)stateGraph->m_states.size();
+	if (m_from < 0 || m_from >= stateCount || m_to < 0 || m_to >= stateCount)
+	{
+		log::error << L"RtStateTransitionData: state index out of range (from " << m_from << L", to " << m_to << L", " << stateCount << L" state(s))." << Endl;
+		return nullptr;
+	}
+
 	Ref< RtStateTransition > instance = new RtStateTransition();
 
 	instance->m_from = stateGraph->m_states[m_from];
