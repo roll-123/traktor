@@ -138,6 +138,10 @@ void SkeletonComponent::update(const world::UpdateParams& update)
 	m_deferredDeltaTime = 0.0;
 
 #if defined(T_USE_UPDATE_JOBS)
+	// Wait for any pose job still in flight before spawning the next; nothing else
+	// synchronizes when the mesh isn't rendered, and two overlapping jobs race the
+	// pose controller state (RtStateGraph) on the same instance.
+	synchronize();
 	m_updatePoseControllerJob = JobManager::getInstance().add([=, this]() {
 		updatePoseController(update.alternateTime, deltaTime);
 	});
