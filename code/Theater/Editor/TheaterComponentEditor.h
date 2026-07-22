@@ -10,6 +10,7 @@
 
 #include "Core/Ref.h"
 #include "Scene/Editor/IWorldComponentEditor.h"
+#include "Ui/EventSubject.h"
 
 namespace traktor
 {
@@ -62,6 +63,7 @@ private:
 	Ref< ui::ToolBar > m_toolBar;
 	Ref< ui::SequencerControl > m_trackSequencer;
 	Ref< scene::SceneEditorContext > m_context;
+	Ref< ui::EventSubject::IEventHandler > m_contextPostFrameHandler;
 
 	void updateView();
 

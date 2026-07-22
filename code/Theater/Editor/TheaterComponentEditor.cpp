@@ -126,7 +126,7 @@ bool TheaterComponentEditor::create(scene::SceneEditorContext* context, ui::Cont
 	m_trackSequencer->addEventHandler< ui::KeyMoveEvent >(this, &TheaterComponentEditor::eventSequencerKeyMove);
 
 	m_context = context;
-	m_context->addEventHandler< scene::PostFrameEvent >(this, &TheaterComponentEditor::eventContextPostFrame);
+	m_contextPostFrameHandler = m_context->addEventHandler< scene::PostFrameEvent >(this, &TheaterComponentEditor::eventContextPostFrame);
 
 	updateView();
 	return true;
@@ -134,6 +134,12 @@ bool TheaterComponentEditor::create(scene::SceneEditorContext* context, ui::Cont
 
 void TheaterComponentEditor::destroy()
 {
+	if (m_context && m_contextPostFrameHandler)
+	{
+		m_context->removeEventHandler(m_contextPostFrameHandler);
+		m_contextPostFrameHandler = nullptr;
+	}
+
 	safeDestroy(m_trackSequencer);
 	safeDestroy(m_toolBar);
 }

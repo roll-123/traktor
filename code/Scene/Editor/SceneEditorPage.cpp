@@ -1076,15 +1076,21 @@ void SceneEditorPage::createControllerEditor()
 			}
 
 			if (componentEditor)
+			{
 				if (componentEditor->create(
 						m_context,
 						m_controllerPanel))
 				{
 					m_context->setControllerEditor(componentEditor);
 					m_site->showAdditionalPanel(m_controllerPanel);
+
+					// Only a single controller editor slot exists; keep the first successful
+					// editor instead of overwriting it (which would orphan its event handlers).
+					break;
 				}
 				else
 					log::error << L"Unable to create world component editor; create failed." << Endl;
+			}
 			else
 				T_DEBUG(L"Unable to find world component editor for type \"" << type_name(worldComponentData) << L"\".");
 		}
