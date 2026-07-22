@@ -70,6 +70,12 @@ Ref< Stage > StageData::createInstance(IEnvironment* environment, const Object* 
 	// Create layers.
 	for (auto layerData : m_layers)
 	{
+		if (!layerData)
+		{
+			log::error << L"Stage \"" << m_name << L"\" contains a null layer (" << (int32_t)m_layers.size() << L" layer(s) total); skipped." << Endl;
+			continue;
+		}
+
 		Ref< Layer > layer = layerData->createInstance(stage, environment);
 		if (!layer)
 			return nullptr;
