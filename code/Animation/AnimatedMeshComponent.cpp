@@ -102,7 +102,13 @@ void AnimatedMeshComponent::setOwner(world::Entity* owner)
 
 Aabb3 AnimatedMeshComponent::getBoundingBox() const
 {
-	return m_skeletonComponent != nullptr ? m_skeletonComponent->getBoundingBox() : m_mesh->getBoundingBox();
+	// Union of bind mesh bounds and posed skeleton bounds; a sparse skeleton
+	// (few joints, mechanical rigs) alone under-estimates the visible mesh and
+	// causes false frustum culling.
+	Aabb3 boundingBox = m_mesh->getBoundingBox();
+	if (m_skeletonComponent != nullptr)
+		boundingBox.contain(m_skeletonComponent->getBoundingBox());
+	return boundingBox;
 }
 
 void AnimatedMeshComponent::update(const world::UpdateParams& update)
