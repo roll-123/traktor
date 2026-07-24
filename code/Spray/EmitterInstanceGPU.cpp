@@ -221,7 +221,8 @@ void EmitterInstanceGPU::build(
 	const Transform& transform)
 {
 	const float distance = 0.0f;
-	if (m_emitter->getShader()->hasTechnique(worldRenderPass.getTechnique()))
+	if (m_emitter->getShader() &&
+		m_emitter->getShader()->hasTechnique(worldRenderPass.getTechnique()))
 		pointRenderer->batchUntilFlush(
 			m_emitter->getShader(),
 			m_headBuffer,
