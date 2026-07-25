@@ -71,15 +71,20 @@ std::wstring getJointName(ufbx_node* node)
 	return jointName;
 }
 
-ufbx_bone_pose* findBonePose(ufbx_pose* bindPose, ufbx_node* node)
+// GearUp port: GU rigs author joint chains in file units (cm) behind a
+// compensating scale on the rig root node, while geometry is authored in
+// meters. Every local joint translation must be scaled by the rig root's
+// local scaling (replicates the 2018 FBX-SDK importer's GetNodeLocalScaling
+// handling).
+Vector4 scaledLocalTranslation(const ufbx_node* node, const ufbx_vec3& rootScale)
 {
-	for (size_t i = 0; i < bindPose->bone_poses.count; ++i)
-	{
-		ufbx_bone_pose& pose = bindPose->bone_poses.data[i];
-		if (pose.bone_node == node)
-			return &pose;
-	}
-	return nullptr;	
+	const ufbx_vec3& t = node->local_transform.translation;
+	return Vector4(
+		(float)(t.x * rootScale.x),
+		(float)(t.y * rootScale.y),
+		(float)(t.z * rootScale.z),
+		0.0f
+	);
 }
 
 	}
@@ -91,62 +96,40 @@ bool convertSkeleton(
 	const Matrix44& axisTransform
 )
 {
-	ufbx_pose* bindPose = skeletonNode->bind_pose;
-	T_FATAL_ASSERT(bindPose != nullptr);
-
-	const Matrix44 Mrx90 = rotateX(deg2rad(-90.0f));
+	// GearUp port: replicate the 2018 FBX-SDK importer's skeleton convention,
+	// which GU rigs are authored for: a joint is its authored LOCAL translation
+	// only (identity rotation), scaled by the rig root node's local scaling,
+	// and the rig root itself sits at the origin -- aligned with the pivot
+	// re-based geometry (see MeshConverter). Upstream's bind_pose/world-matrix
+	// read yields cm translations against meter geometry, which mangles
+	// skinning the moment a controller writes a real pose.
+	const ufbx_vec3 rootScale = skeletonNode->local_transform.scale;
 
 	const bool result = traverse(nullptr, skeletonNode, [&](ufbx_node* parent, ufbx_node* node) {
 		const std::wstring jointName = getJointName(node);
 
-		Matrix44 Mnode = Matrix44::identity();
-
-		ufbx_bone_pose* pose = findBonePose(bindPose, node);
-		if (pose)
-		{
-			Mnode = convertMatrix(pose->bone_to_world);
-		}
-		else
-		{
-			pose = findBonePose(bindPose, parent);
-			if (pose)
-				Mnode = convertMatrix(pose->bone_to_world) * convertMatrix(node->node_to_parent);
-		}
-
-		// Calculate joint transformation.
-		Matrix44 Mjoint = Mnode * Mrx90;
-
-		const Vector4 S(
-			1.0f / Mjoint.axisX().length(),
-			1.0f / Mjoint.axisY().length(),
-			1.0f / Mjoint.axisZ().length()
-		);
-		Mjoint = Mjoint * scale(S);
-		Mjoint = axisTransform * Mjoint * axisTransform.inverse();
-
+		Vector4 translation = Vector4::zero();
 		uint32_t parentId = c_InvalidIndex;
+
 		if (parent != nullptr)
 		{
+			translation = axisTransform * scaledLocalTranslation(node, rootScale);
+
 			const std::wstring parentJointName = getJointName(parent);
 			parentId = outModel.findJointIndex(parentJointName);
-			if (parentId != c_InvalidIndex)
-			{
-				const Matrix44 Mparent = outModel.getJointGlobalTransform(parentId).toMatrix44();
-				Mjoint = Mparent.inverse() * Mjoint;	// Cl = Bg-1 * Cg
-			}
-			else
+			if (parentId == c_InvalidIndex)
 				log::warning << L"Unable to bind parent joint; no such joint \"" << parentJointName << L"\"." << Endl;
 		}
 
 		Joint joint;
 		joint.setParent(parentId);
 		joint.setName(jointName);
-		joint.setTransform(Transform(Mjoint));
+		joint.setTransform(Transform(translation, Quaternion::identity()));
 		outModel.addJoint(joint);
 		return true;
 	});
 
-	return true;
+	return result;
 }
 
 Ref< Pose > convertPose(
@@ -168,9 +151,18 @@ Ref< Pose > convertPose(
 		return node->element_id == skeletonNode->element_id;
 	});
 	if (!eskeletonNode)
+	{
+		ufbx_free_scene(escene);
 		return nullptr;
+	}
 
-	const Matrix44 Mrx90 = rotateX(deg2rad(-90.0f));
+	// GearUp port: poses follow the same convention as convertSkeleton --
+	// evaluated LOCAL translations scaled by the BIND rig root scale, local
+	// rotations axis-converted, and the root's bind translation re-based away.
+	const ufbx_vec3 rootScale = skeletonNode->local_transform.scale;
+	const Vector4 rootBind = axisTransform * scaledLocalTranslation(skeletonNode, rootScale);
+
+	const Matrix44 axisTransformInv = axisTransform.inverse();
 
 	Ref< Pose > pose = new Pose();
 	const bool result = traverse(nullptr, eskeletonNode, [&](ufbx_node* parent, ufbx_node* node) {
@@ -182,32 +174,17 @@ Ref< Pose > convertPose(
 			return true;
 		}
 
-		// Calculate joint transformation.
-		const Matrix44 Mnode = convertMatrix(node->geometry_to_world);
-		Matrix44 Mjoint = Mnode * Mrx90;
+		Vector4 translation = axisTransform * scaledLocalTranslation(node, rootScale);
+		if (parent == nullptr)
+			translation -= rootBind;
 
-		const Vector4 S(
-			1.0f / Mjoint.axisX().length(),
-			1.0f / Mjoint.axisY().length(),
-			1.0f / Mjoint.axisZ().length()
-		);
-		Mjoint = Mjoint * scale(S);
-		Mjoint = axisTransform * Mjoint * axisTransform.inverse();
+		// Local rotation, axis-converted by conjugation.
+		ufbx_transform rt = {};
+		rt.rotation = node->local_transform.rotation;
+		rt.scale.x = rt.scale.y = rt.scale.z = 1.0;
+		const Matrix44 R = axisTransform * convertMatrix(ufbx_transform_to_matrix(&rt)) * axisTransformInv;
 
-		if (parent != nullptr)
-		{
-			const std::wstring parentJointName = getJointName(parent);
-			const uint32_t parentId = model.findJointIndex(parentJointName);
-			if (parentId != c_InvalidIndex)
-			{
-				const Matrix44 Mparent = pose->getJointGlobalTransform(&model, parentId).toMatrix44();
-				Mjoint = Mparent.inverse() * Mjoint;	// Cl = Bg-1 * Cg
-			}
-			else
-				log::warning << L"Unable to bind parent joint; no such joint \"" << parentJointName << L"\"." << Endl;
-		}
-
-		pose->setJointTransform(jointId, Transform(Mjoint));
+		pose->setJointTransform(jointId, Transform(translation, Quaternion(R).normalized()));
 		return true;
 	});
 
