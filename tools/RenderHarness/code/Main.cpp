@@ -108,6 +108,7 @@ int main(int argc, const char** argv)
 		traktor::log::info << L"  -size=<n>          Image size in pixels, square (default 512)" << Endl;
 		traktor::log::info << L"  -angle=<deg>       Yaw angle in degrees (default 30)" << Endl;
 		traktor::log::info << L"  -filter=<substr>   Only render instances whose path contains <substr>" << Endl;
+		traktor::log::info << L"  -dump-joints       Log skeleton joints (name, parent, local/global position) per model" << Endl;
 		return 0;
 	}
 
@@ -120,6 +121,7 @@ int main(int argc, const char** argv)
 	const int32_t size = cmdLine.hasOption(L"size") ? cmdLine.getOption(L"size").getInteger() : 512;
 	const float angleDeg = cmdLine.hasOption(L"angle") ? (float)cmdLine.getOption(L"angle").getInteger() : 30.0f;
 	const std::wstring filter = cmdLine.hasOption(L"filter") ? cmdLine.getOption(L"filter").getString() : L"";
+	const bool dumpJoints = cmdLine.hasOption(L"dump-joints");
 
 	if (!FileSystem::getInstance().makeAllDirectories(outPath))
 	{
@@ -176,6 +178,22 @@ int main(int argc, const char** argv)
 			traktor::log::error << L"FAIL " << path << L" : unable to read model \"" << asset->getFileName().getPathName() << L"\"." << Endl;
 			++failed;
 			continue;
+		}
+
+		if (dumpJoints)
+		{
+			const auto& joints = model->getJoints();
+			traktor::log::info << L"JOINTS " << path << L" count=" << (int32_t)joints.size() << Endl;
+			for (uint32_t i = 0; i < (uint32_t)joints.size(); ++i)
+			{
+				const model::Joint& joint = joints[i];
+				const Vector4 tl = joint.getTransform().translation();
+				const Vector4 tg = model->getJointGlobalTransform(i).translation();
+				traktor::log::info << L"  [" << i << L"] " << joint.getName()
+					<< L" parent=" << (int32_t)joint.getParent()
+					<< L" local=(" << tl.x() << L", " << tl.y() << L", " << tl.z() << L")"
+					<< L" global=(" << tg.x() << L", " << tg.y() << L", " << tg.z() << L")" << Endl;
+			}
 		}
 
 		if (!model->apply(model::Triangulate()))
