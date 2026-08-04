@@ -402,7 +402,9 @@ bool buildBodyCreationSettings(const BodyDesc* desc, JPH::ShapeRefC shape, JPH::
 
 bool passesQueryFilter(const BodyJolt* body, const QueryFilter& filter)
 {
-	if (filter.ignoreClusterId != 0 && body->getClusterId() == filter.ignoreClusterId)
+	// ~0U is the no-cluster sentinel (see Body ctor and the contact validate filter) --
+	// an unclustered querier must not reject every unclustered body in the world.
+	if (filter.ignoreClusterId != 0 && filter.ignoreClusterId != ~0U && body->getClusterId() == filter.ignoreClusterId)
 		return false;
 	const uint32_t group = body->getCollisionGroup();
 	if ((group & filter.includeGroup) == 0 || (group & filter.ignoreGroup) != 0)
